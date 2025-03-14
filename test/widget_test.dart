@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:package:myproject/main.dart'; 
+import 'package:myproject/main.dart'; 
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('Password Generator App test', (WidgetTester tester) async {
     await tester.pumpWidget(const PasswordGeneratorApp());
 
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();  
 
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Оберіть хоча б одну опцію!'), findsNothing);
+    expect(find.byType(SelectableText), findsOneWidget); 
+
+    await tester.tap(find.byIcon(Icons.copy));
+    await tester.pump(); 
+
+    expect(find.text('Пароль скопійовано!'), findsOneWidget);
   });
 }
