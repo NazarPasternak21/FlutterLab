@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
 
 class RegisterScreen extends StatelessWidget {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  const RegisterScreen({super.key}); 
+
+  static final _formKey = GlobalKey<FormState>();
+  static final _emailController = TextEditingController();
+  static final _passwordController = TextEditingController();
+  static final _confirmPasswordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Реєстрація'), 
+        title: const Text('Реєстрація'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0), 
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'), 
+                decoration: const InputDecoration(labelText: 'Email'),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -33,7 +35,7 @@ class RegisterScreen extends StatelessWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 12),  
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
@@ -48,11 +50,11 @@ class RegisterScreen extends StatelessWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 12),  
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _confirmPasswordController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Підтвердити пароль'),  
+                decoration: const InputDecoration(labelText: 'Підтвердити пароль'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Підтвердьте пароль';
@@ -63,7 +65,7 @@ class RegisterScreen extends StatelessWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 24),  
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
@@ -76,7 +78,7 @@ class RegisterScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: const Text('Вже є акаунт? Увійти'),  
+                child: const Text('Вже є акаунт? Увійти'),
               ),
             ],
           ),
