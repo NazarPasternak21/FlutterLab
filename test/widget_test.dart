@@ -8,13 +8,13 @@ void main() {
   testWidgets('ProfileScreen displays preferred temperature and reminder time', (WidgetTester tester) async {
     final appState = AppState();
     appState.setPreferredTemp(60.0);
-    appState.setReminderTime(TimeOfDay(hour: 10, minute: 30));
+    appState.setReminderTime(const TimeOfDay(hour: 10, minute: 30));
 
     await tester.pumpWidget(
       MaterialApp(
         home: ChangeNotifierProvider<AppState>(
           create: (_) => appState,
-          child: const ProfileScreen(), 
+          child: const ProfileScreen(),
         ),
       ),
     );
@@ -36,7 +36,7 @@ void main() {
       MaterialApp(
         home: ChangeNotifierProvider<AppState>(
           create: (_) => appState,
-          child: const ProfileScreen(),  
+          child: const ProfileScreen(), 
         ),
       ),
     );
