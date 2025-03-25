@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:myproject/main.dart'; 
+import 'package:provider/provider.dart';
+import 'package:my_project/widgets/app_state.dart';
+import 'package:my_project/screens/profile_screen.dart';
+import 'package:my_project/screens/login_screen.dart';
+import 'package:my_project/widgets/custom_button.dart';
 
 void main() {
-  testWidgets('Password Generator App test', (WidgetTester tester) async {
-    await tester.pumpWidget(const PasswordGeneratorApp());
+  testWidgets('Test ProfileScreen and Logout Button', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (context) => AppState(),
+        child: MaterialApp(
+          home: ProfileScreen(),
+          routes: {
+            '/': (context) => LoginScreen(),
+          },
+        ),
+      ),
+    );
 
+    expect(find.text('Профіль користувача'), findsOneWidget);
+    expect(find.byType(Slider), findsOneWidget);
+    expect(find.byType(CustomButton), findsNWidgets(2)); 
+
+    await tester.tap(find.text('Вийти'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.refresh));
-    await tester.pumpAndSettle();  
-
-    expect(find.text('Оберіть хоча б одну опцію!'), findsNothing);
-    expect(find.byType(SelectableText), findsOneWidget); 
-
-    await tester.tap(find.byIcon(Icons.copy));
-    await tester.pump(); 
-
-    expect(find.text('Пароль скопійовано!'), findsOneWidget);
+    expect(find.text('Вхід'), findsOneWidget);
   });
 }
