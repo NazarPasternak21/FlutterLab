@@ -4,10 +4,10 @@ import '../widgets/app_state.dart';
 import '../widgets/cup_status_card.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key); 
+  const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -16,15 +16,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     var appState = Provider.of<AppState>(context);
-
     double currentTemperature = _isHeating ? appState.preferredTemp : 45.0;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Моя розумна чашка'), 
+        title: const Text('Моя розумна чашка'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person), 
+            icon: const Icon(Icons.person),
             onPressed: () => Navigator.pushNamed(context, '/profile'),
           ),
         ],

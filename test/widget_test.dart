@@ -11,7 +11,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (context) => AppState(),
-        child: MaterialApp(
+        child: const MaterialApp( 
           home: ProfileScreen(),
           routes: {
             '/': (context) => LoginScreen(),

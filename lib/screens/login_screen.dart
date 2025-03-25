@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatelessWidget {
+  LoginScreen({super.key});
+
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -9,17 +11,17 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Вхід'), 
+        title: const Text('Вхід'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0), 
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'), 
+                decoration: const InputDecoration(labelText: 'Email'),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -32,7 +34,7 @@ class LoginScreen extends StatelessWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 12), 
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
@@ -47,7 +49,7 @@ class LoginScreen extends StatelessWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 24), 
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {

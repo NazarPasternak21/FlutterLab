@@ -7,8 +7,8 @@ class CupStatusCard extends StatelessWidget {
   const CupStatusCard({
     required this.temperature,
     required this.isHeating,
-    Key? key,
-  }) : super(key: key);  
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,16 +19,16 @@ class CupStatusCard extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            Icon(Icons.local_cafe, size: 72, color: Colors.brown),
-            SizedBox(height: 16),
+            const Icon(Icons.local_cafe, size: 72, color: Colors.brown),
+            const SizedBox(height: 16),
             Text(
               'Температура: ${temperature.toStringAsFixed(1)}°C',
-              style: TextStyle(fontSize: 20),
+              style: const TextStyle(fontSize: 20),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
               isHeating ? 'Підігрів увімкнено' : 'Очікування...',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
         ),
