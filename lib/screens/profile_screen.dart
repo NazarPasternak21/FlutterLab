@@ -4,6 +4,8 @@ import '../widgets/app_state.dart';
 import '../widgets/custom_button.dart';
 
 class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({Key? key}) : super(key: key); 
+
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
@@ -14,15 +16,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     var appState = Provider.of<AppState>(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Профіль користувача')),
+      appBar: AppBar(title: const Text('Профіль користувача')),  
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             ListTile(
-              leading: Icon(Icons.thermostat),
-              title: Text('Бажана температура напою'),
-              subtitle: Text('${appState.preferredTemp.toStringAsFixed(1)}°C'),
+              leading: const Icon(Icons.thermostat), 
+              title: const Text('Бажана температура напою'),  
+              subtitle: Text(appState.preferredTemp.toStringAsFixed(1) + '°C'), 
             ),
             Slider(
               min: 40,
@@ -35,11 +37,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.alarm),
-              title: Text('Час нагадування випити каву/чай'),
-              subtitle: Text('${appState.reminderTime.format(context)}'),
+              leading: const Icon(Icons.alarm),  
+              title: const Text('Час нагадування випити каву/чай'), 
+              subtitle: Text(appState.reminderTime.format(context)),  
               trailing: IconButton(
-                icon: Icon(Icons.edit),
+                icon: const Icon(Icons.edit),  
                 onPressed: () async {
                   TimeOfDay? picked = await showTimePicker(
                     context: context,
@@ -51,12 +53,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),  
             CustomButton(
               text: 'Зберегти',
               onPressed: () => Navigator.pop(context),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16), 
             CustomButton(
               text: 'Вийти',
               onPressed: () {

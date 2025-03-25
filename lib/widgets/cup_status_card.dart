@@ -4,7 +4,11 @@ class CupStatusCard extends StatelessWidget {
   final double temperature;
   final bool isHeating;
 
-  CupStatusCard({required this.temperature, required this.isHeating});
+  const CupStatusCard({
+    required this.temperature,
+    required this.isHeating,
+    Key? key,
+  }) : super(key: key);  
 
   @override
   Widget build(BuildContext context) {

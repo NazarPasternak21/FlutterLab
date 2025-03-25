@@ -4,6 +4,8 @@ import '../widgets/app_state.dart';
 import '../widgets/cup_status_card.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key); 
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -19,10 +21,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Моя розумна чашка'),
+        title: const Text('Моя розумна чашка'), 
         actions: [
           IconButton(
-            icon: Icon(Icons.person),
+            icon: const Icon(Icons.person), 
             onPressed: () => Navigator.pushNamed(context, '/profile'),
           ),
         ],
@@ -35,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
               temperature: currentTemperature,
               isHeating: _isHeating,
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
                 setState(() {
