@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/app_state.dart';
+import 'package:my_project/services/app_state.dart';
 import '../widgets/custom_button.dart';
 
 class ProfileScreen extends StatefulWidget {
