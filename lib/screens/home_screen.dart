@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:my_project/services/app_state.dart';
-import '../widgets/cup_status_card.dart';
+import 'package:my_project/widgets/cup_status_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
