@@ -1,22 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:myproject/main.dart'; 
+import 'package:provider/provider.dart';
+import 'package:my_project/services/app_state.dart';
+import 'package:my_project/screens/profile_screen.dart';
 
 void main() {
-  testWidgets('Password Generator App test', (WidgetTester tester) async {
-    await tester.pumpWidget(const PasswordGeneratorApp());
+  testWidgets('ProfileScreen displays preferred temperature and reminder time', (WidgetTester tester) async {
+    final appState = AppState();
+    appState.setPreferredTemp(60.0);
+    appState.setReminderTime(const TimeOfDay(hour: 10, minute: 30));
 
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<AppState>(
+          create: (_) => appState,
+          child: const ProfileScreen(),
+        ),
+      ),
+    );
 
-    await tester.tap(find.byIcon(Icons.refresh));
-    await tester.pumpAndSettle();  
+    expect(find.text('Бажана температура напою'), findsOneWidget);
+    expect(find.text('60.0°C'), findsOneWidget);
 
-    expect(find.text('Оберіть хоча б одну опцію!'), findsNothing);
-    expect(find.byType(SelectableText), findsOneWidget); 
+    expect(find.text('10:30 AM'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.copy));
-    await tester.pump(); 
+    expect(find.text('Зберегти'), findsOneWidget);
+    expect(find.text('Вийти'), findsOneWidget);
+  });
 
-    expect(find.text('Пароль скопійовано!'), findsOneWidget);
+  testWidgets('ProfileScreen allows changing the temperature', (WidgetTester tester) async {
+    final appState = AppState();
+    appState.setPreferredTemp(60.0);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChangeNotifierProvider<AppState>(
+          create: (_) => appState,
+          child: const ProfileScreen(), 
+        ),
+      ),
+    );
+
+    await tester.drag(find.byType(Slider), const Offset(50, 0));
+    await tester.pump();
+
+    expect(appState.preferredTemp, isNot(60.0));
   });
 }
