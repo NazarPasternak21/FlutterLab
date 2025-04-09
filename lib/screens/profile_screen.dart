@@ -80,9 +80,8 @@ class ProfileScreen extends StatelessWidget {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('isLoggedIn', false);
 
-              if (Navigator.of(context).mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                       (route) => false,
                 );
