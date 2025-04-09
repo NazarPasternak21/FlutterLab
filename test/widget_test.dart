@@ -1,22 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:myproject/main.dart'; 
+import 'package:mockito/mockito.dart';
+import 'package:untitled/screens/login_screen.dart';
+import 'package:untitled/screens/register_screen.dart';
+import 'package:untitled/services/local_auth_repository.dart';
+import 'package:untitled/services/app_state.dart';
+import 'package:provider/provider.dart';
+
+class MockAuthRepo extends Mock implements LocalAuthRepository {}
 
 void main() {
-  testWidgets('Password Generator App test', (WidgetTester tester) async {
-    await tester.pumpWidget(const PasswordGeneratorApp());
+  group('LoginScreen Tests', () {
+    late MockAuthRepo mockAuthRepo;
+    late AppState appState;
 
-    await tester.pumpAndSettle();
+    setUp(() {
+      mockAuthRepo = MockAuthRepo();
+      appState = AppState();
+    });
 
-    await tester.tap(find.byIcon(Icons.refresh));
-    await tester.pumpAndSettle();  
+    testWidgets('should navigate to RegisterScreen when "Зареєструйся" is pressed', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChangeNotifierProvider(
+            create: (_) => appState,
+            child: LoginScreen(),
+          ),
+        ),
+      );
 
-    expect(find.text('Оберіть хоча б одну опцію!'), findsNothing);
-    expect(find.byType(SelectableText), findsOneWidget); 
+      await tester.tap(find.text('Ще не маєш акаунта? Зареєструйся'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.copy));
-    await tester.pump(); 
-
-    expect(find.text('Пароль скопійовано!'), findsOneWidget);
+      expect(find.byType(RegisterScreen), findsOneWidget);
+    });
   });
 }
