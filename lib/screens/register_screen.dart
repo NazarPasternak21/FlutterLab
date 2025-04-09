@@ -30,6 +30,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_formKey.currentState!.validate()) {
       final existingUser = await _authRepo.getUserPassword(_emailController.text);
 
+      if (!mounted) return;
+
       if (existingUser != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Користувач з таким email вже існує')),
@@ -39,7 +41,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _emailController.text,
           _passwordController.text,
         );
-        await Provider.of<AppState>(context, listen: false).loadUserSettings(_emailController.text);
+
+        if (!mounted) return;
+
+        await Provider.of<AppState>(context, listen: false)
+            .loadUserSettings(_emailController.text);
+
+        if (!mounted) return;
+
         Navigator.pushReplacementNamed(context, '/home');
       }
     }
@@ -65,13 +74,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) => value != null && value.contains('@') ? null : 'Введіть коректний email',
+                validator: (value) =>
+                value != null && value.contains('@')
+                    ? null
+                    : 'Введіть коректний email',
               ),
               TextFormField(
                 controller: _passwordController,
                 decoration: const InputDecoration(labelText: 'Пароль'),
                 obscureText: true,
-                validator: (value) => value != null && value.length >= 6 ? null : 'Пароль має містити щонайменше 6 символів',
+                validator: (value) =>
+                value != null && value.length >= 6
+                    ? null
+                    : 'Пароль має містити щонайменше 6 символів',
               ),
               TextFormField(
                 controller: _confirmPasswordController,

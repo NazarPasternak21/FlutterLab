@@ -31,8 +31,15 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text,
         _passwordController.text,
       );
+
+      if (!mounted) return;
+
       if (success) {
-        await Provider.of<AppState>(context, listen: false).loadUserSettings(_emailController.text);
+        await Provider.of<AppState>(context, listen: false)
+            .loadUserSettings(_emailController.text);
+
+        if (!mounted) return;
+
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
