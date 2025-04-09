@@ -1,36 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_project/services/app_state.dart';
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/profile_screen.dart';
+import 'package:my_project/screens/login_screen.dart';
+import 'package:my_project/screens/register_screen.dart';
+import 'package:my_project/screens/home_screen.dart';
+import 'package:my_project/screens/profile_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  final savedEmail = prefs.getString('email');
+
+  final appState = AppState();
+  if (isLoggedIn && savedEmail != null) {
+    await appState.loadUserSettings(savedEmail);
+  }
+
   runApp(
     ChangeNotifierProvider(
-      create: (context) => AppState(),
-      child: const MyApp(),
+      create: (context) => appState,
+      child: MyApp(isLoggedIn: isLoggedIn),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Smart Cup',
-      theme: ThemeData(
-        primarySwatch: Colors.brown,
-      ),
-      initialRoute: '/',
+      theme: ThemeData(primarySwatch: Colors.brown),
+      initialRoute: isLoggedIn ? '/home' : '/',
       routes: {
-        '/': (context) => LoginScreen(), 
-        '/register': (context) => const RegisterScreen(), 
-        '/home': (context) => const HomeScreen(), 
-        '/profile': (context) => const ProfileScreen(), 
+        '/': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }

@@ -1,72 +1,149 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_project/services/local_auth_repository.dart';
+import 'package:my_project/screens/login_screen.dart';
 import 'package:my_project/services/app_state.dart';
-import 'package:my_project/widgets/custom_button.dart';
 
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key}); 
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
 
-  @override
-  ProfileScreenState createState() => ProfileScreenState();
-}
+  Future<void> _editTemperature(BuildContext context) async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    double temp = appState.preferredTemp;
 
-class ProfileScreenState extends State<ProfileScreen> {
-  @override
-  Widget build(BuildContext context) {
-    var appState = Provider.of<AppState>(context);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Профіль користувача')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.thermostat),
-              title: const Text('Бажана температура напою'),
-              subtitle: Text('${appState.preferredTemp.toStringAsFixed(1)}°C'), 
-            ),
-            Slider(
-              min: 40,
-              max: 80,
-              divisions: 40,
-              value: appState.preferredTemp,
-              label: '${appState.preferredTemp.toStringAsFixed(1)}°C',
-              onChanged: (value) {
-                appState.setPreferredTemp(value);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.alarm),
-              title: const Text('Час нагадування випити каву/чай'),
-              subtitle: Text(appState.reminderTime.format(context)),
-              trailing: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () async {
-                  TimeOfDay? picked = await showTimePicker(
-                    context: context,
-                    initialTime: appState.reminderTime,
-                  );
-                  if (picked != null) {
-                    appState.setReminderTime(picked);
-                  }
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Редагувати температуру'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${temp.toStringAsFixed(1)}°C', style: const TextStyle(fontSize: 20)),
+              Slider(
+                value: temp,
+                min: 30,
+                max: 100,
+                divisions: 70,
+                label: '${temp.toStringAsFixed(1)}°C',
+                onChanged: (value) {
+                  temp = value;
+                  (context as Element).markNeedsBuild();
                 },
               ),
-            ),
-            const SizedBox(height: 24),
-            CustomButton(
-              text: 'Зберегти',
+            ],
+          ),
+          actions: [
+            TextButton(
               onPressed: () => Navigator.pop(context),
+              child: const Text('Скасувати'),
             ),
-            const SizedBox(height: 16),
-            CustomButton(
-              text: 'Вийти',
+            ElevatedButton(
               onPressed: () {
-                Navigator.pushReplacementNamed(context, '/');
+                appState.setPreferredTemp(temp);
+                Navigator.pop(context);
               },
+              child: const Text('Зберегти'),
             ),
           ],
-        ),
+        );
+      },
+    );
+  }
+
+  Future<void> _editReminderTime(BuildContext context) async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: appState.reminderTime,
+    );
+
+    if (picked != null && picked != appState.reminderTime) {
+      appState.setReminderTime(picked);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authRepo = LocalAuthRepository();
+    final appState = Provider.of<AppState>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Профіль'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await authRepo.logoutUser();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('isLoggedIn', false);
+
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                );
+              }
+            },
+          )
+        ],
+      ),
+      body: FutureBuilder<String?>(
+        future: authRepo.getCurrentUserEmail(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final email = snapshot.data ?? 'Невідомо';
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 4,
+                  child: ListTile(
+                    title: const Text('Email'),
+                    subtitle: Text(email),
+                    leading: const Icon(Icons.email),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 4,
+                  child: ListTile(
+                    title: const Text('Температура чашки'),
+                    subtitle: Text('${appState.preferredTemp.toStringAsFixed(1)}°C'),
+                    leading: const Icon(Icons.thermostat),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _editTemperature(context),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 4,
+                  child: ListTile(
+                    title: const Text('Час нагадування'),
+                    subtitle: Text(appState.reminderTime.format(context)),
+                    leading: const Icon(Icons.alarm),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => _editReminderTime(context),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

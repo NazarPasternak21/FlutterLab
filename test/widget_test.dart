@@ -1,49 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
+import 'package:my_project/screens/login_screen.dart';
+import 'package:my_project/screens/register_screen.dart';
 import 'package:my_project/services/app_state.dart';
-import 'package:my_project/screens/profile_screen.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  testWidgets('ProfileScreen displays preferred temperature and reminder time', (WidgetTester tester) async {
-    final appState = AppState();
-    appState.setPreferredTemp(60.0);
-    appState.setReminderTime(const TimeOfDay(hour: 10, minute: 30));
+  group('LoginScreen Tests', () {
+    late AppState appState;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ChangeNotifierProvider<AppState>(
-          create: (_) => appState,
-          child: const ProfileScreen(),
+    setUp(() {
+      appState = AppState();
+    });
+
+    testWidgets('повинно перейти на RegisterScreen, коли натискається "Зареєструйся"', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChangeNotifierProvider(
+            create: (_) => appState,
+            child: LoginScreen(),
+          ),
         ),
-      ),
-    );
+      );
 
-    expect(find.text('Бажана температура напою'), findsOneWidget);
-    expect(find.text('60.0°C'), findsOneWidget);
+      await tester.tap(find.text('Ще не маєш акаунта? Зареєструйся'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('10:30 AM'), findsOneWidget);
-
-    expect(find.text('Зберегти'), findsOneWidget);
-    expect(find.text('Вийти'), findsOneWidget);
-  });
-
-  testWidgets('ProfileScreen allows changing the temperature', (WidgetTester tester) async {
-    final appState = AppState();
-    appState.setPreferredTemp(60.0);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ChangeNotifierProvider<AppState>(
-          create: (_) => appState,
-          child: const ProfileScreen(), 
-        ),
-      ),
-    );
-
-    await tester.drag(find.byType(Slider), const Offset(50, 0));
-    await tester.pump();
-
-    expect(appState.preferredTemp, isNot(60.0));
+      expect(find.byType(RegisterScreen), findsOneWidget);
+    });
   });
 }

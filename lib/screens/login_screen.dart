@@ -1,68 +1,97 @@
 import 'package:flutter/material.dart';
+import 'package:my_project/screens/register_screen.dart';
+import 'package:my_project/services/local_auth_repository.dart';
+import 'package:my_project/services/app_state.dart';
+import 'package:provider/provider.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  final _authRepo = LocalAuthRepository();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (_formKey.currentState!.validate()) {
+      final success = await _authRepo.loginUser(
+        _emailController.text,
+        _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        await Provider.of<AppState>(context, listen: false)
+            .loadUserSettings(_emailController.text);
+
+        if (!mounted) return;
+
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Невірний email або пароль')),
+        );
+      }
+    }
+  }
+
+  void _goToRegister() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const RegisterScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Вхід'),
-      ),
+      appBar: AppBar(title: const Text('Вхід')),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введіть email';
-                  }
-                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                  if (!emailRegex.hasMatch(value)) {
-                    return 'Некоректний формат email';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                value != null && value.contains('@') ? null : 'Введіть коректний email',
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                obscureText: true,
                 decoration: const InputDecoration(labelText: 'Пароль'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введіть пароль';
-                  }
-                  if (value.length < 6) {
-                    return 'Пароль має містити щонайменше 6 символів';
-                  }
-                  return null;
-                },
+                obscureText: true,
+                validator: (value) =>
+                value != null && value.length >= 6 ? null : 'Пароль має містити щонайменше 6 символів',
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.pushReplacementNamed(context, '/home');
-                  }
-                },
+                onPressed: _login,
                 child: const Text('Увійти'),
               ),
+              const SizedBox(height: 16),
               TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/register');
-                },
-                child: const Text('Немає акаунту? Зареєструйся'),
+                onPressed: _goToRegister,
+                child: const Text("Ще не маєш акаунта? Зареєструйся"),
               ),
             ],
           ),

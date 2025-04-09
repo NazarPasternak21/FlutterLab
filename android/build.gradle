@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Оновіть до останньої версії Android Gradle Plugin
+        classpath 'com.android.tools.build:gradle:8.0.0'  // або остання версія
+    }
+}
+
 allprojects {
     repositories {
         google()
@@ -9,6 +20,7 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
