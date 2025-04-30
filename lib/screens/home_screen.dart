@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
       },
       child: Scaffold(
         appBar: AppBar(

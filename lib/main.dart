@@ -7,7 +7,6 @@ import 'package:my_project/screens/register_screen.dart';
 import 'package:my_project/screens/home_screen.dart';
 import 'package:my_project/screens/profile_screen.dart';
 import 'package:my_project/services/connectivity_service.dart';
-import 'package:my_project/services/local_auth_repository.dart';
 import 'package:my_project/services/connectivity_listener.dart';
 import 'package:my_project/services/mqtt_service.dart';
 
