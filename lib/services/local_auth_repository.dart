@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_project/services/connectivity_service.dart';
 
 class LocalAuthRepository {
   static const _usersKey = 'users';
@@ -55,5 +56,20 @@ class LocalAuthRepository {
 
     final users = Map<String, String>.from(jsonDecode(usersJson));
     return users[email];
+  }
+
+  Future<bool> tryAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString(_emailKey);
+    final isLoggedIn = prefs.getBool(_isLoggedInKey) ?? false;
+
+    if (isLoggedIn && email != null) {
+      final isConnected = await ConnectivityService.checkInternetConnection();
+      if (!isConnected) {
+        print('Автологін без Інтернету');
+      }
+      return true;
+    }
+    return false;
   }
 }

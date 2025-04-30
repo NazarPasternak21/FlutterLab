@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:my_project/screens/register_screen.dart';
 import 'package:my_project/services/local_auth_repository.dart';
 import 'package:my_project/services/app_state.dart';
+import 'package:my_project/services/connectivity_service.dart';
+import 'package:my_project/services/auth_service.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -26,6 +28,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    final isConnected = await ConnectivityService.checkInternetConnection();
+    if (!isConnected) {
+      showSnackBar(context, 'Немає з’єднання з Інтернетом');
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       final success = await _authRepo.loginUser(
         _emailController.text,
@@ -35,6 +43,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (success) {
+        await AuthService.saveLoginStatus(true);
+
         await Provider.of<AppState>(context, listen: false)
             .loadUserSettings(_emailController.text);
 
@@ -55,6 +65,12 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(
         builder: (_) => const RegisterScreen(),
       ),
+    );
+  }
+
+  void showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 

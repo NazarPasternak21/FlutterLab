@@ -64,6 +64,41 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _confirmAndLogout(BuildContext context) async {
+    final authRepo = LocalAuthRepository();
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Вийти з додатку'),
+        content: const Text('Ви впевнені, що хочете вийти?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Скасувати'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Вийти'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await authRepo.logoutUser();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authRepo = LocalAuthRepository();
@@ -75,18 +110,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await authRepo.logoutUser();
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('isLoggedIn', false);
-
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      (route) => false,
-                );
-              }
-            },
+            onPressed: () => _confirmAndLogout(context),
           )
         ],
       ),
