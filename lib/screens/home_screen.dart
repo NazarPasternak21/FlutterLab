@@ -20,9 +20,9 @@ class _HomeScreenState extends State<HomeScreen> {
     var mqttService = Provider.of<MqttService>(context);
     double currentTemperature = mqttService.currentTemperature ?? 45.0;
 
-    return WillPopScope(
-      onWillPop: () async {
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
       },
       child: Scaffold(
         appBar: AppBar(

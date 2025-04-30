@@ -21,7 +21,6 @@ void main() async {
   final savedEmail = prefs.getString('email');
 
   final appState = AppState();
-  final authService = LocalAuthRepository();
 
   if (isLoggedIn && savedEmail != null) {
     await appState.loadUserSettings(savedEmail);

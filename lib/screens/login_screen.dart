@@ -29,6 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     final isConnected = await ConnectivityService.checkInternetConnection();
+    if (!mounted) return;
+
     if (!isConnected) {
       showSnackBar(context, 'Немає з’єднання з Інтернетом');
       return;
@@ -45,6 +47,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success) {
         await AuthService.saveLoginStatus(true);
 
+        if (!mounted) return;
+
         await Provider.of<AppState>(context, listen: false)
             .loadUserSettings(_emailController.text);
 
@@ -52,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         Navigator.pushReplacementNamed(context, '/home');
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Невірний email або пароль')),
         );

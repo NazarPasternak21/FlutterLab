@@ -3,8 +3,12 @@ import 'dart:io';
 
 class ConnectivityService {
   static Future<bool> checkInternetConnection() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) return false;
+    final connectivityResults = await Connectivity().checkConnectivity();
+
+    if (connectivityResults.isEmpty ||
+        connectivityResults.contains(ConnectivityResult.none)) {
+      return false;
+    }
 
     try {
       final result = await InternetAddress.lookup('example.com');
