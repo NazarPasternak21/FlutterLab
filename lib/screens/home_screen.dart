@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:my_project/services/app_state.dart';
+import 'package:my_project/services/mqtt_service.dart';
 import 'package:my_project/widgets/cup_status_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,36 +17,42 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     var appState = Provider.of<AppState>(context);
-    double currentTemperature = _isHeating ? appState.preferredTemp : 45.0;
+    var mqttService = Provider.of<MqttService>(context);
+    double currentTemperature = mqttService.currentTemperature ?? 45.0;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Моя розумна чашка'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => Navigator.pushNamed(context, '/profile'),
-          ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CupStatusCard(
-              temperature: currentTemperature,
-              isHeating: _isHeating,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _isHeating = !_isHeating;
-                });
-              },
-              child: Text(_isHeating ? 'Вимкнути підігрів' : 'Увімкнути підігрів'),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Моя розумна чашка'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.person),
+              onPressed: () => Navigator.pushNamed(context, '/profile'),
             ),
           ],
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CupStatusCard(
+                temperature: _isHeating ? appState.preferredTemp : currentTemperature,
+                isHeating: _isHeating,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _isHeating = !_isHeating;
+                  });
+                },
+                child: Text(_isHeating ? 'Вимкнути підігрів' : 'Увімкнути підігрів'),
+              ),
+            ],
+          ),
         ),
       ),
     );
