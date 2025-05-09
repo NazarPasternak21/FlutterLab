@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:my_project/services/app_state.dart';
 import 'package:my_project/services/mqtt_service.dart';
 import 'package:my_project/widgets/cup_status_card.dart';
+import 'package:my_project/widgets/custom_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,21 +21,19 @@ class _HomeScreenState extends State<HomeScreen> {
     var mqttService = Provider.of<MqttService>(context);
     double currentTemperature = mqttService.currentTemperature ?? 45.0;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Моя розумна чашка'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.person),
-              onPressed: () => Navigator.pushNamed(context, '/profile'),
-            ),
-          ],
-        ),
-        body: Center(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Моя розумна чашка'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () => Navigator.pushNamed(context, '/profile'),
+          ),
+        ],
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -43,13 +42,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 isHeating: _isHeating,
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
+              CustomButton(
+                text: _isHeating ? 'Вимкнути підігрів' : 'Увімкнути підігрів',
+                icon: _isHeating ? Icons.power_off : Icons.power,
                 onPressed: () {
                   setState(() {
                     _isHeating = !_isHeating;
                   });
                 },
-                child: Text(_isHeating ? 'Вимкнути підігрів' : 'Увімкнути підігрів'),
+              ),
+              const SizedBox(height: 16),
+              CustomButton(
+                text: 'Сканувати QR-код',
+                icon: Icons.qr_code_scanner,
+                onPressed: () => Navigator.pushNamed(context, '/qr_scanner'),
+              ),
+              const SizedBox(height: 12),
+              CustomButton(
+                text: 'Збережені QR-коди',
+                icon: Icons.save,
+                onPressed: () => Navigator.pushNamed(context, '/saved_qr'),
               ),
             ],
           ),
