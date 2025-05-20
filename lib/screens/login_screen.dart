@@ -27,13 +27,18 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     context.read<ConnectionCubit>().checkConnection();
 
-    context.read<AuthCubit>().autoLogin().then((loggedIn) {
+    Future.microtask(() async {
+      final loggedIn = await context.read<AuthCubit>().autoLogin();
+      if (!mounted) return;
+
       if (loggedIn) {
-        final email = (context.read<AuthCubit>().state as AuthSuccess).email;
-        context.read<ProfileCubit>().setEmail(email);
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+        final state = context.read<AuthCubit>().state;
+        if (state is AuthSuccess) {
+          context.read<ProfileCubit>().setEmail(state.email);
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
       }
     });
   }
@@ -98,13 +103,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(labelText: 'Email'),
-                      validator: (value) => value!.isEmpty ? 'Введіть email' : null,
+                      validator: (value) =>
+                      value!.isEmpty ? 'Введіть email' : null,
                     ),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
                       decoration: const InputDecoration(labelText: 'Пароль'),
-                      validator: (value) => value!.isEmpty ? 'Введіть пароль' : null,
+                      validator: (value) =>
+                      value!.isEmpty ? 'Введіть пароль' : null,
                     ),
                     const SizedBox(height: 20),
                     if (state is AuthLoading)
@@ -117,7 +124,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const RegisterScreen()),
                         );
                       },
                       child: const Text('Зареєструватися'),

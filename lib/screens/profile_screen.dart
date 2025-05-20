@@ -18,7 +18,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthSuccess) {
       context.read<ProfileCubit>().setEmail(authState.email);
@@ -49,9 +48,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               if (context.watch<ConnectionCubit>().state is InternetFailure) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Немає інтернету'))
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Немає інтернету')),
+                    );
+                  }
                 });
               }
 
@@ -75,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: const Icon(Icons.edit),
                         onPressed: () async {
                           final controller = TextEditingController(
-                              text: profileState.temperature.toString()
+                            text: profileState.temperature.toString(),
                           );
                           final result = await showDialog<String>(
                             context: context,
@@ -97,6 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ],
                             ),
                           );
+                          if (!mounted) return;
                           if (result != null) {
                             final temp = double.tryParse(result);
                             if (temp != null) {
@@ -117,7 +119,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: const Icon(Icons.edit),
                         onPressed: () async {
                           final controller = TextEditingController(
-                              text: profileState.reminderTime);
+                            text: profileState.reminderTime,
+                          );
                           final result = await showDialog<String>(
                             context: context,
                             builder: (_) => AlertDialog(
@@ -135,6 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ],
                             ),
                           );
+                          if (!mounted) return;
                           if (result != null) {
                             context.read<ProfileCubit>().setReminderTime(result);
                           }
