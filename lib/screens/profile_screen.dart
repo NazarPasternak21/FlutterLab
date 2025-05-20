@@ -18,10 +18,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final authState = context.read<AuthCubit>().state;
-    if (authState is AuthSuccess) {
-      context.read<ProfileCubit>().setEmail(authState.email);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = context.read<AuthCubit>().state;
+      if (authState is AuthSuccess) {
+        context.read<ProfileCubit>().setEmail(authState.email);
+      }
+    });
   }
 
   @override
@@ -46,13 +48,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             builder: (context, authState) {
               final email = authState is AuthSuccess ? authState.email : '';
 
-              if (context.watch<ConnectionCubit>().state is InternetFailure) {
+              final connectionState = context.watch<ConnectionCubit>().state;
+              if (connectionState is InternetFailure) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Немає інтернету')),
-                    );
-                  }
+                  final messenger = ScaffoldMessenger.of(context);
+                  messenger.hideCurrentSnackBar();
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Немає інтернету')),
+                  );
                 });
               }
 
@@ -75,15 +78,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       trailing: IconButton(
                         icon: const Icon(Icons.edit),
                         onPressed: () async {
+                          final profileCubit = context.read<ProfileCubit>();
                           final controller = TextEditingController(
                             text: profileState.temperature.toString(),
                           );
 
-                          final dialogContext = context;
-
                           final result = await showDialog<String>(
-                            context: dialogContext,
-                            builder: (_) => AlertDialog(
+                            context: context,
+                            builder: (dialogContext) => AlertDialog(
                               title: const Text('Змінити температуру'),
                               content: TextField(
                                 controller: controller,
@@ -91,11 +93,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(dialogContext),
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext),
                                   child: const Text('Скасувати'),
                                 ),
                                 ElevatedButton(
-                                  onPressed: () => Navigator.pop(dialogContext, controller.text),
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext, controller.text),
                                   child: const Text('Зберегти'),
                                 ),
                               ],
@@ -103,10 +107,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
 
                           if (!mounted) return;
+
                           if (result != null) {
                             final temp = double.tryParse(result);
                             if (temp != null) {
-                              context.read<ProfileCubit>().setTemperature(temp);
+                              profileCubit.setTemperature(temp);
                             }
                           }
                         },
@@ -122,24 +127,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       trailing: IconButton(
                         icon: const Icon(Icons.edit),
                         onPressed: () async {
+                          final profileCubit = context.read<ProfileCubit>();
                           final controller = TextEditingController(
                             text: profileState.reminderTime,
                           );
 
-                          final dialogContext = context;
-
                           final result = await showDialog<String>(
-                            context: dialogContext,
-                            builder: (_) => AlertDialog(
+                            context: context,
+                            builder: (dialogContext) => AlertDialog(
                               title: const Text('Змінити час нагадування'),
                               content: TextField(controller: controller),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(dialogContext),
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext),
                                   child: const Text('Скасувати'),
                                 ),
                                 ElevatedButton(
-                                  onPressed: () => Navigator.pop(dialogContext, controller.text),
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext, controller.text),
                                   child: const Text('Зберегти'),
                                 ),
                               ],
@@ -147,8 +153,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
 
                           if (!mounted) return;
+
                           if (result != null) {
-                            context.read<ProfileCubit>().setReminderTime(result);
+                            profileCubit.setReminderTime(result);
                           }
                         },
                       ),
