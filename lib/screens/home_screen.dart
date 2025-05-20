@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:my_project/services/app_state.dart';
-import 'package:my_project/services/mqtt_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_project/cubit/connection/connection_cubit.dart';
+import 'package:my_project/cubit/connection/connection_state.dart';
+import 'package:my_project/cubit/mqtt/mqtt_cubit.dart';
+import 'package:my_project/cubit/mqtt/mqtt_state.dart';
+import 'package:my_project/cubit/profile/profile_cubit.dart';
 import 'package:my_project/widgets/cup_status_card.dart';
 import 'package:my_project/widgets/custom_button.dart';
 
@@ -17,9 +20,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = Provider.of<AppState>(context);
-    var mqttService = Provider.of<MqttService>(context);
-    double currentTemperature = mqttService.currentTemperature ?? 45.0;
+    final profileState = context.watch<ProfileCubit>().state;
+    final connectionState = context.watch<ConnectionCubit>().state;
+    final preferredTemp = profileState.temperature;
+
+    if (connectionState is InternetFailure) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Немає інтернету')),
+        );
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -37,9 +48,27 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CupStatusCard(
-                temperature: _isHeating ? appState.preferredTemp : currentTemperature,
-                isHeating: _isHeating,
+              BlocBuilder<MqttCubit, MqttState>(
+                builder: (context, mqttState) {
+                  double currentTemperature = 45.0;
+
+                  if (mqttState is MqttTemperatureReceived) {
+                    currentTemperature = mqttState.temperature;
+                  } else if (mqttState is MqttError) {
+                    currentTemperature = 0.0;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(mqttState.message)),
+                      );
+                    });
+                  }
+
+                  return CupStatusCard(
+                    temperature:
+                    _isHeating ? preferredTemp : currentTemperature,
+                    isHeating: _isHeating,
+                  );
+                },
               ),
               const SizedBox(height: 24),
               CustomButton(
@@ -55,13 +84,13 @@ class _HomeScreenState extends State<HomeScreen> {
               CustomButton(
                 text: 'Сканувати QR-код',
                 icon: Icons.qr_code_scanner,
-                onPressed: () => Navigator.pushNamed(context, '/qr_scanner'),
+                onPressed: () => Navigator.pushNamed(context, '/scan'),
               ),
               const SizedBox(height: 12),
               CustomButton(
                 text: 'Збережені QR-коди',
                 icon: Icons.save,
-                onPressed: () => Navigator.pushNamed(context, '/saved_qr'),
+                onPressed: () => Navigator.pushNamed(context, '/saved'),
               ),
             ],
           ),

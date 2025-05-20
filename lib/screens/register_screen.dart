@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:my_project/services/local_auth_repository.dart';
-import 'package:my_project/services/app_state.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_project/cubit/auth/auth_cubit.dart';
+import 'package:my_project/cubit/auth/auth_state.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,8 +16,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  final _authRepo = LocalAuthRepository();
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -26,82 +24,83 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _register() async {
+  void _submitRegister() {
     if (_formKey.currentState!.validate()) {
-      final existingUser = await _authRepo.getUserPassword(_emailController.text);
-
-      if (!mounted) return;
-
-      if (existingUser != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Користувач з таким email вже існує')),
-        );
-      } else {
-        await _authRepo.registerUser(
-          _emailController.text,
-          _passwordController.text,
-        );
-
-        if (!mounted) return;
-
-        await Provider.of<AppState>(context, listen: false)
-            .loadUserSettings(_emailController.text);
-
-        if (!mounted) return;
-
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      context.read<AuthCubit>().register(email, password);
     }
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    if (value != _passwordController.text) {
-      return 'Паролі не співпадають';
-    }
-    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Реєстрація')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) =>
-                value != null && value.contains('@')
-                    ? null
-                    : 'Введіть коректний email',
+      body: BlocConsumer<AuthCubit, AuthState>(
+        listener: (context, state) {
+          if (state is AuthFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          } else if (state is AuthInitial) {
+            Navigator.of(context).pop();
+          }
+        },
+        builder: (context, state) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    validator: (value) =>
+                    value!.isEmpty ? 'Введіть email' : null,
+                  ),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Пароль'),
+                    validator: (value) =>
+                    value!.isEmpty ? 'Введіть пароль' : null,
+                  ),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    decoration:
+                    const InputDecoration(labelText: 'Повторіть пароль'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Повторіть пароль';
+                      }
+                      if (value != _passwordController.text) {
+                        return 'Паролі не співпадають';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  if (state is AuthLoading)
+                    const CircularProgressIndicator()
+                  else
+                    ElevatedButton(
+                      onPressed: _submitRegister,
+                      child: const Text('Зареєструватися'),
+                    ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Назад до входу'),
+                  ),
+                ],
               ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Пароль'),
-                obscureText: true,
-                validator: (value) =>
-                value != null && value.length >= 6
-                    ? null
-                    : 'Пароль має містити щонайменше 6 символів',
-              ),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(labelText: 'Повторіть пароль'),
-                obscureText: true,
-                validator: _validateConfirmPassword,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _register,
-                child: const Text('Зареєструватися'),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

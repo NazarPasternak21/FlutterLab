@@ -1,32 +1,44 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_project/screens/login_screen.dart';
-import 'package:my_project/screens/register_screen.dart';
-import 'package:my_project/services/app_state.dart';
-import 'package:provider/provider.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:my_project/cubit/auth/auth_cubit.dart';
+import 'package:my_project/cubit/auth/auth_state.dart';
+import 'mocks/mocks.mocks.dart';
 
 void main() {
-  group('LoginScreen Tests', () {
-    late AppState appState;
+  late MockLocalAuthRepository mockRepository;
 
-    setUp(() {
-      appState = AppState();
-    });
+  setUp(() {
+    mockRepository = MockLocalAuthRepository();
+  });
 
-    testWidgets('повинно перейти на RegisterScreen, коли натискається "Зареєструйся"', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: ChangeNotifierProvider(
-            create: (_) => appState,
-            child: LoginScreen(),
-          ),
-        ),
-      );
+  group('AuthCubit', () {
+    blocTest<AuthCubit, AuthState>(
+      'emits [AuthLoading, AuthSuccess] when login succeeds',
+      build: () {
+        when(mockRepository.loginUser('test@mail.com', '1234'))
+            .thenAnswer((_) async => true);
+        return AuthCubit(mockRepository);
+      },
+      act: (cubit) => cubit.login('test@mail.com', '1234'),
+      expect: () => [
+        isA<AuthLoading>(),
+        isA<AuthSuccess>().having((s) => s.email, 'email', 'test@mail.com'),
+      ],
+    );
 
-      await tester.tap(find.text('Ще не маєш акаунта? Зареєструйся'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(RegisterScreen), findsOneWidget);
-    });
+    blocTest<AuthCubit, AuthState>(
+      'emits [AuthLoading, AuthFailure] when login fails',
+      build: () {
+        when(mockRepository.loginUser('fail@mail.com', 'wrong'))
+            .thenAnswer((_) async => false);
+        return AuthCubit(mockRepository);
+      },
+      act: (cubit) => cubit.login('fail@mail.com', 'wrong'),
+      expect: () => [
+        isA<AuthLoading>(),
+        isA<AuthFailure>().having((s) => s.message, 'message', 'Невірний логін або пароль'),
+      ],
+    );
   });
 }

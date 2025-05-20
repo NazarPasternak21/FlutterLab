@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_project/services/connectivity_service.dart';
+import 'dart:developer' as developer;
 
 class LocalAuthRepository {
   static const _usersKey = 'users';
@@ -67,12 +67,38 @@ class LocalAuthRepository {
     final isLoggedIn = prefs.getBool(_isLoggedInKey) ?? false;
 
     if (isLoggedIn && email != null) {
-      final isConnected = await ConnectivityService.checkInternetConnection();
-      if (!isConnected) {
-        developer.log('Автологін без Інтернету', name: 'LocalAuthRepository');
+      final usersJson = prefs.getString(_usersKey);
+      if (usersJson != null) {
+        final users = Map<String, String>.from(jsonDecode(usersJson));
+        if (users.containsKey(email)) {
+          final isConnected = await ConnectivityService.checkInternetConnection();
+          if (!isConnected) {
+            developer.log('Автологін без Інтернету', name: 'LocalAuthRepository');
+          }
+          return true;
+        }
       }
-      return true;
     }
     return false;
+  }
+
+  Future<void> setUserTemperature(String email, double temp) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('cup_temp_$email', temp);
+  }
+
+  Future<double> getUserTemperature(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('cup_temp_$email') ?? 37.0;
+  }
+
+  Future<void> setUserReminderTime(String email, String time) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('reminder_time_$email', time);
+  }
+
+  Future<String> getUserReminderTime(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('reminder_time_$email') ?? "08:00";
   }
 }

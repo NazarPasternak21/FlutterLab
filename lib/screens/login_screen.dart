@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_project/cubit/auth/auth_cubit.dart';
+import 'package:my_project/cubit/auth/auth_state.dart';
+import 'package:my_project/cubit/connection/connection_cubit.dart';
+import 'package:my_project/cubit/connection/connection_state.dart';
+import 'package:my_project/cubit/profile/profile_cubit.dart';
+import 'package:my_project/screens/home_screen.dart';
 import 'package:my_project/screens/register_screen.dart';
-import 'package:my_project/services/local_auth_repository.dart';
-import 'package:my_project/services/app_state.dart';
-import 'package:my_project/services/connectivity_service.dart';
-import 'package:my_project/services/auth_service.dart';
-import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,7 +20,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  final _authRepo = LocalAuthRepository();
+  bool isConnected = true;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<ConnectionCubit>().checkConnection();
+
+    context.read<AuthCubit>().autoLogin().then((loggedIn) {
+      if (loggedIn) {
+        final email = (context.read<AuthCubit>().state as AuthSuccess).email;
+        context.read<ProfileCubit>().setEmail(email);
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -27,95 +45,88 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _login() async {
-    final isConnected = await ConnectivityService.checkInternetConnection();
-    if (!mounted) return;
-
+  void _submitLogin() {
     if (!isConnected) {
-      showSnackBar(context, 'Немає з’єднання з Інтернетом');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Немає інтернету')),
+      );
       return;
     }
 
     if (_formKey.currentState!.validate()) {
-      final success = await _authRepo.loginUser(
-        _emailController.text,
-        _passwordController.text,
-      );
-
-      if (!mounted) return;
-
-      if (success) {
-        await AuthService.saveLoginStatus(true);
-
-        if (!mounted) return;
-
-        await Provider.of<AppState>(context, listen: false)
-            .loadUserSettings(_emailController.text);
-
-        if (!mounted) return;
-
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Невірний email або пароль')),
-        );
-      }
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      context.read<AuthCubit>().login(email, password);
     }
-  }
-
-  void _goToRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const RegisterScreen(),
-      ),
-    );
-  }
-
-  void showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Вхід')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) =>
-                value != null && value.contains('@') ? null : 'Введіть коректний email',
+      body: BlocListener<ConnectionCubit, InternetState>(
+        listener: (context, state) {
+          setState(() {
+            isConnected = state is InternetSuccess;
+          });
+        },
+        child: BlocConsumer<AuthCubit, AuthState>(
+          listener: (context, state) {
+            if (state is AuthSuccess) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+            } else if (state is AuthFailure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+          builder: (context, state) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (!isConnected)
+                      const Text(
+                        'Немає інтернету',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      validator: (value) => value!.isEmpty ? 'Введіть email' : null,
+                    ),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: 'Пароль'),
+                      validator: (value) => value!.isEmpty ? 'Введіть пароль' : null,
+                    ),
+                    const SizedBox(height: 20),
+                    if (state is AuthLoading)
+                      const CircularProgressIndicator()
+                    else
+                      ElevatedButton(
+                        onPressed: _submitLogin,
+                        child: const Text('Увійти'),
+                      ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        );
+                      },
+                      child: const Text('Зареєструватися'),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Пароль'),
-                obscureText: true,
-                validator: (value) =>
-                value != null && value.length >= 6 ? null : 'Пароль має містити щонайменше 6 символів',
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _login,
-                child: const Text('Увійти'),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: _goToRegister,
-                child: const Text("Ще не маєш акаунта? Зареєструйся"),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -1,73 +1,47 @@
-import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:my_project/services/usb_manager.dart';
-import 'package:my_project/services/usb_service.dart';
-import 'package:usb_serial/usb_serial.dart';
+import 'package:my_project/cubit/qr/qr_cubit.dart';
+import 'package:my_project/cubit/qr/qr_state.dart';
 
 class QRScannerScreen extends StatelessWidget {
-  QRScannerScreen({super.key});
-
-  final UsbManager _usb = UsbManager(UsbService());
-
-  Future<String> _getArduinoReply(UsbPort port, {Duration timeout = const Duration(seconds: 2)}) async {
-    final completer = Completer<String>();
-    String response = '';
-    late StreamSubscription<Uint8List> subscription;
-
-    subscription = port.inputStream!.listen((bytes) {
-      response += String.fromCharCodes(bytes);
-      if (response.contains('\n')) {
-        subscription.cancel();
-        completer.complete(response.trim());
-      }
-    });
-
-    return completer.future.timeout(timeout, onTimeout: () {
-      subscription.cancel();
-      return 'Arduino не відповів';
-    });
-  }
-
-  Future<void> _handleQRCode(BuildContext context, String data) async {
-    final port = await _usb.selectDevice();
-    if (!context.mounted) return;
-
-    if (port == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Arduino не знайдено')),
-      );
-      return;
-    }
-
-    await _usb.sendData('$data\n');
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('QR надіслано: $data')),
-    );
-
-    final arduinoResponse = await _getArduinoReply(port);
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Arduino відповів: $arduinoResponse')),
-    );
-  }
+  const QRScannerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Сканування QR-коду')),
-      body: MobileScanner(
-        onDetect: (capture) {
-          final qrCode = capture.barcodes.first.rawValue;
-          if (qrCode != null) {
-            _handleQRCode(context, qrCode);
-            Navigator.pop(context);
+      appBar: AppBar(title: const Text("Сканер QR")),
+      body: BlocConsumer<QRCubit, QRState>(
+        listener: (context, state) {
+          if (state is QRFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Помилка: ${state.error}")),
+            );
           }
+        },
+        builder: (context, state) {
+          return Column(
+            children: [
+              Expanded(
+                child: MobileScanner(
+                  onDetect: (capture) {
+                    final List<Barcode> barcodes = capture.barcodes;
+                    if (barcodes.isNotEmpty) {
+                      final qr = barcodes.first.rawValue ?? 'QR не зчитано';
+                      context.read<QRCubit>().processScannedQR(qr);
+                    }
+                  },
+                ),
+              ),
+              if (state is QRSuccess)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text("Результат: ${state.data}",
+                      style: const TextStyle(fontSize: 18)),
+                ),
+            ],
+          );
         },
       ),
     );

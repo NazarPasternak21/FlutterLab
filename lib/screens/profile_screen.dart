@@ -1,171 +1,150 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:my_project/services/local_auth_repository.dart';
-import 'package:my_project/screens/login_screen.dart';
-import 'package:my_project/services/app_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_project/cubit/connection/connection_cubit.dart';
+import 'package:my_project/cubit/connection/connection_state.dart';
+import 'package:my_project/cubit/profile/profile_cubit.dart';
+import 'package:my_project/cubit/profile/profile_state.dart';
+import 'package:my_project/cubit/auth/auth_cubit.dart';
+import 'package:my_project/cubit/auth/auth_state.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  Future<void> _editTemperature(BuildContext context) async {
-    final appState = Provider.of<AppState>(context, listen: false);
-    double temp = appState.preferredTemp;
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
 
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Редагувати температуру'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('${temp.toStringAsFixed(1)}°C', style: const TextStyle(fontSize: 20)),
-              Slider(
-                value: temp,
-                min: 30,
-                max: 100,
-                divisions: 70,
-                label: '${temp.toStringAsFixed(1)}°C',
-                onChanged: (value) {
-                  temp = value;
-                  (context as Element).markNeedsBuild();
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Скасувати'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                appState.setPreferredTemp(temp);
-                Navigator.pop(context);
-              },
-              child: const Text('Зберегти'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
 
-  Future<void> _editReminderTime(BuildContext context) async {
-    final appState = Provider.of<AppState>(context, listen: false);
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: appState.reminderTime,
-    );
-
-    if (picked != null && picked != appState.reminderTime) {
-      appState.setReminderTime(picked);
-    }
-  }
-
-  Future<void> _confirmAndLogout(BuildContext context) async {
-    final authRepo = LocalAuthRepository();
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Вийти з додатку'),
-        content: const Text('Ви впевнені, що хочете вийти?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Скасувати'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Вийти'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await authRepo.logoutUser();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', false);
-
-      if (context.mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-              (route) => false,
-        );
-      }
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthSuccess) {
+      context.read<ProfileCubit>().setEmail(authState.email);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authRepo = LocalAuthRepository();
-    final appState = Provider.of<AppState>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Профіль'),
+        leading: const BackButton(),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => _confirmAndLogout(context),
-          )
+            onPressed: () {
+              context.read<AuthCubit>().logout();
+              Navigator.of(context).pushReplacementNamed('/login');
+            },
+          ),
         ],
       ),
-      body: FutureBuilder<String?>(
-        future: authRepo.getCurrentUserEmail(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, profileState) {
+          return BlocBuilder<AuthCubit, AuthState>(
+            builder: (context, authState) {
+              final email = authState is AuthSuccess ? authState.email : '';
 
-          final email = snapshot.data ?? 'Невідомо';
+              if (context.watch<ConnectionCubit>().state is InternetFailure) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Немає інтернету'))
+                  );
+                });
+              }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 4,
-                  child: ListTile(
-                    title: const Text('Email'),
-                    subtitle: Text(email),
-                    leading: const Icon(Icons.email),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 4,
-                  child: ListTile(
-                    title: const Text('Температура чашки'),
-                    subtitle: Text('${appState.preferredTemp.toStringAsFixed(1)}°C'),
-                    leading: const Icon(Icons.thermostat),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _editTemperature(context),
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.email),
+                      title: const Text('Зареєстровано на'),
+                      subtitle: Text(email),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 4,
-                  child: ListTile(
-                    title: const Text('Час нагадування'),
-                    subtitle: Text(appState.reminderTime.format(context)),
-                    leading: const Icon(Icons.alarm),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => _editReminderTime(context),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.thermostat),
+                      title: const Text('Температура чашки'),
+                      subtitle: Text('${profileState.temperature}°C'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () async {
+                          final controller = TextEditingController(
+                              text: profileState.temperature.toString()
+                          );
+                          final result = await showDialog<String>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text('Змінити температуру'),
+                              content: TextField(
+                                controller: controller,
+                                keyboardType: TextInputType.number,
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Скасувати'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, controller.text),
+                                  child: const Text('Зберегти'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (result != null) {
+                            final temp = double.tryParse(result);
+                            if (temp != null) {
+                              context.read<ProfileCubit>().setTemperature(temp);
+                            }
+                          }
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.access_time),
+                      title: const Text('Час нагадування'),
+                      subtitle: Text(profileState.reminderTime),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () async {
+                          final controller = TextEditingController(
+                              text: profileState.reminderTime);
+                          final result = await showDialog<String>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text('Змінити час нагадування'),
+                              content: TextField(controller: controller),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Скасувати'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, controller.text),
+                                  child: const Text('Зберегти'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (result != null) {
+                            context.read<ProfileCubit>().setReminderTime(result);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
