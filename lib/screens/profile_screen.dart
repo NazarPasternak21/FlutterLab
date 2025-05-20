@@ -78,8 +78,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final controller = TextEditingController(
                             text: profileState.temperature.toString(),
                           );
+
+                          final dialogContext = context;
+
                           final result = await showDialog<String>(
-                            context: context,
+                            context: dialogContext,
                             builder: (_) => AlertDialog(
                               title: const Text('Змінити температуру'),
                               content: TextField(
@@ -88,16 +91,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: () => Navigator.pop(dialogContext),
                                   child: const Text('Скасувати'),
                                 ),
                                 ElevatedButton(
-                                  onPressed: () => Navigator.pop(context, controller.text),
+                                  onPressed: () => Navigator.pop(dialogContext, controller.text),
                                   child: const Text('Зберегти'),
                                 ),
                               ],
                             ),
                           );
+
                           if (!mounted) return;
                           if (result != null) {
                             final temp = double.tryParse(result);
@@ -121,23 +125,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final controller = TextEditingController(
                             text: profileState.reminderTime,
                           );
+
+                          final dialogContext = context;
+
                           final result = await showDialog<String>(
-                            context: context,
+                            context: dialogContext,
                             builder: (_) => AlertDialog(
                               title: const Text('Змінити час нагадування'),
                               content: TextField(controller: controller),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: () => Navigator.pop(dialogContext),
                                   child: const Text('Скасувати'),
                                 ),
                                 ElevatedButton(
-                                  onPressed: () => Navigator.pop(context, controller.text),
+                                  onPressed: () => Navigator.pop(dialogContext, controller.text),
                                   child: const Text('Зберегти'),
                                 ),
                               ],
                             ),
                           );
+
                           if (!mounted) return;
                           if (result != null) {
                             context.read<ProfileCubit>().setReminderTime(result);
