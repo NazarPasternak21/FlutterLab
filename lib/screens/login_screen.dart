@@ -28,17 +28,19 @@ class _LoginScreenState extends State<LoginScreen> {
     context.read<ConnectionCubit>().checkConnection();
 
     Future.microtask(() async {
-      final loggedIn = await context.read<AuthCubit>().autoLogin();
+      final authCubit = context.read<AuthCubit>();
+      final profileCubit = context.read<ProfileCubit>();
+      final loggedIn = await authCubit.autoLogin();
+
       if (!mounted) return;
 
-      if (loggedIn) {
-        final state = context.read<AuthCubit>().state;
-        if (state is AuthSuccess) {
-          context.read<ProfileCubit>().setEmail(state.email);
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
-        }
+      final state = authCubit.state;
+      if (loggedIn && state is AuthSuccess) {
+        profileCubit.setEmail(state.email);
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
       }
     });
   }
@@ -125,7 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                              builder: (_) => const RegisterScreen()),
+                            builder: (_) => const RegisterScreen(),
+                          ),
                         );
                       },
                       child: const Text('Зареєструватися'),
