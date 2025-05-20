@@ -6,6 +6,8 @@ import 'package:my_project/screens/login_screen.dart';
 import 'package:my_project/screens/register_screen.dart';
 import 'package:my_project/screens/home_screen.dart';
 import 'package:my_project/screens/profile_screen.dart';
+import 'package:my_project/screens/qr_scanner_screen.dart';
+import 'package:my_project/screens/saved_qr_screen.dart';
 import 'package:my_project/services/connectivity_service.dart';
 import 'package:my_project/services/connectivity_listener.dart';
 import 'package:my_project/services/mqtt_service.dart';
@@ -67,6 +69,10 @@ class MyApp extends StatelessWidget {
         '/home': (context) => ConnectivityListener(child: const HomeScreen()),
         '/profile': (context) =>
             ConnectivityListener(child: const ProfileScreen()),
+        '/qr_scanner': (context) =>
+            ConnectivityListener(child: QRScannerScreen()),
+        '/saved_qr': (context) =>
+            ConnectivityListener(child: const SavedQrScreen()),
       },
     );
   }
