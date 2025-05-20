@@ -25,24 +25,30 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<ConnectionCubit>().checkConnection();
 
-    Future.microtask(() async {
-      final authCubit = context.read<AuthCubit>();
-      final profileCubit = context.read<ProfileCubit>();
-      final loggedIn = await authCubit.autoLogin();
-
-      if (!mounted) return;
-
-      final state = authCubit.state;
-      if (loggedIn && state is AuthSuccess) {
-        profileCubit.setEmail(state.email);
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ConnectionCubit>().checkConnection();
     });
+
+    _handleAutoLogin();
+  }
+
+  Future<void> _handleAutoLogin() async {
+    final authCubit = context.read<AuthCubit>();
+    final profileCubit = context.read<ProfileCubit>();
+
+    final loggedIn = await authCubit.autoLogin();
+
+    if (!mounted) return;
+
+    final state = authCubit.state;
+    if (loggedIn && state is AuthSuccess) {
+      profileCubit.setEmail(state.email);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    }
   }
 
   @override
