@@ -7,6 +7,8 @@ class MqttCubit extends Cubit<MqttState> {
   final MqttServerClient _client =
   MqttServerClient('test.mosquitto.org', 'flutter_client');
 
+  bool _isHeating = false;
+
   MqttCubit() : super(MqttInitial()) {
     _connect();
   }
@@ -46,5 +48,16 @@ class MqttCubit extends Cubit<MqttState> {
     } catch (e) {
       emit(MqttError('Помилка при парсингу температури: $e'));
     }
+  }
+
+  void toggleHeating() {
+    _isHeating = !_isHeating;
+    emit(MqttHeatingStateChanged(_isHeating));
+
+    final message = _isHeating ? 'on' : 'off';
+    final builder = MqttClientPayloadBuilder();
+    builder.addString(message);
+
+    _client.publishMessage('sensor/heating', MqttQos.atLeastOnce, builder.payload!);
   }
 }

@@ -56,8 +56,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Email'),
-                    validator: (value) =>
-                    value!.isEmpty ? 'Введіть email' : null,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Введіть email';
+                      }
+                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+                      if (!emailRegex.hasMatch(value)) {
+                        return 'Введіть коректний email';
+                      }
+                      return null;
+                    },
                   ),
                   TextFormField(
                     controller: _passwordController,
