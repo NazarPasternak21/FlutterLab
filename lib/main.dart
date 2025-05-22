@@ -1,79 +1,60 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:my_project/services/app_state.dart';
-import 'package:my_project/screens/login_screen.dart';
-import 'package:my_project/screens/register_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_project/cubit/auth/auth_cubit.dart';
+import 'package:my_project/cubit/auth/auth_state.dart';
+import 'package:my_project/cubit/connection/connection_cubit.dart';
+import 'package:my_project/cubit/mqtt/mqtt_cubit.dart';
+import 'package:my_project/cubit/profile/profile_cubit.dart';
+import 'package:my_project/cubit/qr/qr_cubit.dart';
 import 'package:my_project/screens/home_screen.dart';
+import 'package:my_project/screens/login_screen.dart';
 import 'package:my_project/screens/profile_screen.dart';
+import 'package:my_project/screens/register_screen.dart';
 import 'package:my_project/screens/qr_scanner_screen.dart';
 import 'package:my_project/screens/saved_qr_screen.dart';
-import 'package:my_project/services/connectivity_service.dart';
-import 'package:my_project/services/connectivity_listener.dart';
-import 'package:my_project/services/mqtt_service.dart';
-
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+import 'package:my_project/services/local_auth_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  final prefs = await SharedPreferences.getInstance();
-  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-  final savedEmail = prefs.getString('email');
-
-  final appState = AppState();
-
-  if (isLoggedIn && savedEmail != null) {
-    await appState.loadUserSettings(savedEmail);
-    final connected = await ConnectivityService.checkInternetConnection();
-    if (!connected) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showSnackBar(navigatorKey.currentContext!, 'Автологін виконано без Інтернету');
-      });
-    }
-  }
-
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => appState),
-        ChangeNotifierProvider(create: (_) => MqttService()),
-      ],
-      child: MyApp(isLoggedIn: isLoggedIn),
-    ),
-  );
-}
-
-void showSnackBar(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final bool isLoggedIn;
-
-  const MyApp({super.key, required this.isLoggedIn});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'Smart Cup',
-      theme: ThemeData(primarySwatch: Colors.brown),
-      initialRoute: isLoggedIn ? '/home' : '/',
-      routes: {
-        '/': (context) => ConnectivityListener(child: const LoginScreen()),
-        '/register': (context) =>
-            ConnectivityListener(child: const RegisterScreen()),
-        '/home': (context) => ConnectivityListener(child: const HomeScreen()),
-        '/profile': (context) =>
-            ConnectivityListener(child: const ProfileScreen()),
-        '/qr_scanner': (context) =>
-            ConnectivityListener(child: QRScannerScreen()),
-        '/saved_qr': (context) =>
-            ConnectivityListener(child: const SavedQrScreen()),
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(create: (_) => AuthCubit(LocalAuthRepository())),
+        BlocProvider<ProfileCubit>(create: (_) => ProfileCubit()),
+        BlocProvider<QRCubit>(create: (_) => QRCubit()),
+        BlocProvider<ConnectionCubit>(create: (_) => ConnectionCubit()..checkConnection()),
+        BlocProvider<MqttCubit>(create: (_) => MqttCubit()),
+      ],
+      child: BlocListener<AuthCubit, AuthState>(
+        listenWhen: (previous, current) => current is AuthSuccess,
+        listener: (context, state) {
+          if (state is AuthSuccess) {
+            context.read<ProfileCubit>().setEmail(state.email);
+          }
+        },
+        child: MaterialApp(
+          title: 'Smart Cup',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+          ),
+          initialRoute: '/login',
+          routes: {
+            '/home': (_) => const HomeScreen(),
+            '/profile': (_) => const ProfileScreen(),
+            '/login': (_) => const LoginScreen(),
+            '/register': (_) => const RegisterScreen(),
+            '/scan': (_) => const QRScannerScreen(),
+            '/saved': (_) => const SavedQrScreen(),
+          },
+        ),
+      ),
     );
   }
 }
